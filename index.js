@@ -18,15 +18,16 @@ client.on('message', message => {
 
             function play (connection, message) {
                 var server = servers[message.guild.id];
-                server.dispatcher = connection.playStream(ytdl(server.queue[0], {filter: "audioonly"}))
+                server.dispatcher = connection.play(ytdl(server.queue[0], {filter: "audioonly"}))
                 server.queue.shift();
-                server.dispatcher.on("end", function(){
+
+                server.dispatcher.on("finish", function(){
                     if (server.queue[0]) {
                         play(connection, message);
                     } else {
                         connection.disconnect();
                     }
-                })
+                });
             }
 
             if (!args[1]) {
@@ -34,8 +35,8 @@ client.on('message', message => {
                 return;
             }
 
-            if (!message.member.voiceChannel) {
-                message.channel.send("You must be in a channel to play the bot!")
+            if (!message.member.voice.channel) {
+                message.channel.send("You must be in a channel to play the bot!");
                 return;
             }
 
@@ -44,12 +45,36 @@ client.on('message', message => {
             }
 
             var server = servers[message.guild.id];
+            server.queue.push(args[1]);
 
-            if (!message.guild.voiceConnection) 
-                message.member.voiceChannel.join().then(function(connection) {
+            if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
+                message.member.voice.channel.join().then(function(connection) {
                     play(connection, message);
                 })
             
+        break;
+
+        case 'skip':
+            var server = servers[message.guild.id];
+            if (server.dispatcher)
+                server.dispatcher.end();
+
+            message.channel.send("Going!");
+
+        break;
+
+        case 'stop':
+            var server = servers[message.guild.id];
+            if (message.guild.voice.connection) {
+                for (var i = server.queue.length-1; i >= 0; i--) 
+                    server.queue.splice(i, 1);
+
+                server.dispatcher.end();
+                message.channel.send("Stopped!");
+            }
+
+            if (message.guild.voice.connection)
+                message.guild.voice.connection.disconnect();
         break;
     }
 })
