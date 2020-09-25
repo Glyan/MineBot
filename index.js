@@ -1,9 +1,25 @@
 const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
 const ytdl = require("ytdl-core");
+const request = require("request");
+const cheerio = require("cheerio");
 
 const client = new Discord.Client();
 var servers = {};
+
+function searchYT (searchTerm) {
+    return new Promise((resolve, reject) => {
+        let url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(searchTerm) + "&page=&utm_source=opensearch";
+        request.get(url, (err, res, body) => {
+            if (err)
+                throw err;
+
+            const $ = cheerio.load(body);
+            let results = $("a.yt-uix-tile-link.yt-ui-ellipsis.yt-ui-ellipsis-2.yt-uix-sessionLink.spf-link");
+
+        });
+    });
+}
 
 client.once('ready', () => {
     console.log('Ready!')
