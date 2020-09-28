@@ -1,24 +1,29 @@
 const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
 const ytdl = require("ytdl-core");
-const request = require("request");
-const cheerio = require("cheerio");
+const ytsr = require("ytsr");
 
 const client = new Discord.Client();
 var servers = {};
 
-function searchYT (searchTerm) {
-    return new Promise((resolve, reject) => {
-        let url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(searchTerm) + "&page=&utm_source=opensearch";
-        request.get(url, (err, res, body) => {
-            if (err)
-                throw err;
+function remainingArgs(args, index) {
+    let slice = args.slice(index);
+    if (slice.length === 0)
+        return null;
+    return slice.join(" ");
+}
 
-            const $ = cheerio.load(body);
-            let results = $("a.yt-uix-tile-link.yt-ui-ellipsis.yt-ui-ellipsis-2.yt-uix-sessionLink.spf-link");
+async function searchYT (searchTerm, message) {
+    const res = await ytsr(searchTerm).catch(e => {
+        return message.channel.send("No search results!");
+    })
 
-        });
-    });
+    const video = res.items.filter(i => i.type === "video")[0];
+    if (!video)
+        return message.channel.send("No search results!");
+    
+        message.channel.send(video.link);
+    return video.link;
 }
 
 client.once('ready', () => {
@@ -46,8 +51,10 @@ client.on('message', message => {
                 });
             }
 
-            if (!args[1]) {
-                message.channel.send("There is no link!");
+            let search = remainingArgs(args, 1); 
+
+            if (!search) {
+                message.channel.send("There is no search term!");
                 return;
             }
 
@@ -60,13 +67,19 @@ client.on('message', message => {
                 queue: []
             }
 
-            var server = servers[message.guild.id];
-            server.queue.push(args[1]);
+            searchYT(search, message).then((url) => {
+                var server = servers[message.guild.id];
+                server.queue.push(url);
 
-            if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
-                message.member.voice.channel.join().then(function(connection) {
+                if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
+                    message.member.voice.channel.join().then(function(connection) {
                     play(connection, message);
                 })
+            }).catch((err) => {
+                message.channel.send("Failed to search!");
+            });
+
+            
             
         break;
 
