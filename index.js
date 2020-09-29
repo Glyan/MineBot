@@ -78,9 +78,6 @@ client.on('message', message => {
             }).catch((err) => {
                 message.channel.send("Failed to search!");
             });
-
-            
-            
         break;
 
         case 'skip':
@@ -88,7 +85,7 @@ client.on('message', message => {
             if (server.dispatcher)
                 server.dispatcher.end();
 
-            message.channel.send("Going!");
+            message.channel.send("Going next!");
 
         break;
 
@@ -104,6 +101,14 @@ client.on('message', message => {
 
             if (message.guild.voice.connection)
                 message.guild.voice.connection.disconnect();
+        break;
+
+        case 'pop':
+            var server = servers[message.guild.id];
+            if (message.guild.voice.connection) {
+                server.queue.splice(server.queue.length-1, 1);
+                message.channel.send("Pop!");
+            }
         break;
     }
 })
