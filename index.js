@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
 const ytdl = require("ytdl-core");
 const ytsr = require("ytsr");
+const ytpl = require("ytpl");
 
 const client = new Discord.Client();
 var servers = {};
@@ -13,6 +14,20 @@ function remainingArgs(args, index) {
     return slice.join(" ");
 }
 
+function play (connection, message) {
+    var server = servers[message.guild.id];
+    server.dispatcher = connection.play(ytdl(server.queue[0], {filter: "audioonly"}))
+    server.queue.shift();
+    console.log("play");
+    server.dispatcher.on("finish", function(){
+        if (server.queue[0]) {
+            play(connection, message);
+        } else {
+            connection.disconnect();
+        }
+    });
+}
+
 async function searchYT (searchTerm, message) {
     const res = await ytsr(searchTerm).catch(e => {
         return message.channel.send("No search results!");
@@ -22,8 +37,26 @@ async function searchYT (searchTerm, message) {
     if (!video)
         return message.channel.send("No search results!");
     
-        message.channel.send(video.link);
+    message.channel.send(video.link);
     return video.link;
+}
+
+async function searchPlaylist (searchTerm, message) {
+    const res = await ytpl(searchTerm).catch(e => {
+        return message.channel.send("No search results!");
+    })
+
+    var server = servers[message.guild.id];
+    
+    res.items.forEach(video => {
+        server.queue.push(video.url);
+        console.log(video.title);
+    });
+
+    if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
+            message.member.voice.channel.join().then(function(connection) {
+            play(connection, message);
+    })
 }
 
 client.once('ready', () => {
@@ -36,21 +69,6 @@ client.on('message', message => {
 
     switch (args[0]) {
         case 'play':
-
-            function play (connection, message) {
-                var server = servers[message.guild.id];
-                server.dispatcher = connection.play(ytdl(server.queue[0], {filter: "audioonly"}))
-                server.queue.shift();
-
-                server.dispatcher.on("finish", function(){
-                    if (server.queue[0]) {
-                        play(connection, message);
-                    } else {
-                        connection.disconnect();
-                    }
-                });
-            }
-
             let search = remainingArgs(args, 1); 
 
             if (!search) {
@@ -109,6 +127,27 @@ client.on('message', message => {
                 server.queue.splice(server.queue.length-1, 1);
                 message.channel.send("Pop!");
             }
+        break;
+
+        case 'playlist':
+
+            let urlPlaylist = remainingArgs(args, 1); 
+
+            if (!urlPlaylist) {
+                message.channel.send("There is no link!");
+                return;
+            }
+
+            if (!message.member.voice.channel) {
+                message.channel.send("You must be in a channel to play the bot!");
+                return;
+            }
+
+            if (!servers[message.guild.id]) servers[message.guild.id] = {
+                queue: []
+            }
+
+            searchPlaylist(urlPlaylist, message);
         break;
     }
 })
