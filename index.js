@@ -18,7 +18,6 @@ function play (connection, message) {
     var server = servers[message.guild.id];
     server.dispatcher = connection.play(ytdl(server.queue[0], {filter: "audioonly"}))
     server.queue.shift();
-    console.log("play");
     server.dispatcher.on("finish", function(){
         if (server.queue[0]) {
             play(connection, message);
@@ -85,17 +84,30 @@ client.on('message', message => {
                 queue: []
             }
 
-            searchYT(search, message).then((url) => {
+            var expression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
+            var regex = new RegExp(expression);
+
+            if (search.match(regex)) {
                 var server = servers[message.guild.id];
-                server.queue.push(url);
+                server.queue.push(search);
 
                 if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
                     message.member.voice.channel.join().then(function(connection) {
                     play(connection, message);
                 })
-            }).catch((err) => {
-                message.channel.send("Failed to search!");
-            });
+            } else {
+                searchYT(search, message).then((url) => {
+                    var server = servers[message.guild.id];
+                    server.queue.push(url);
+
+                    if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
+                        message.member.voice.channel.join().then(function(connection) {
+                        play(connection, message);
+                    })
+                }).catch((err) => {
+                    message.channel.send("Failed to search!");
+                });
+            }
         break;
 
         case 'skip':
