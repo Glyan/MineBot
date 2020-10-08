@@ -161,6 +161,12 @@ client.on('message', message => {
 
             searchPlaylist(urlPlaylist, message);
         break;
+
+        case 'view':
+            var server = servers[message.guild.id];
+            for (var i = 0; i < server.queue.length; i++)
+                message.channel.send(server.queue[i]);
+        break;
     }
 })
 
