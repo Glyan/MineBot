@@ -22,12 +22,15 @@ function pushSong(servers, message, url) {
 function playSong (servers, message, connection) {
     var server = servers[message.guild.id];
     server.dispatcher = connection.play(ytdl(server.queue[0], {filter: "audioonly"}))
+    message.channel.send("Now playing " + server.queue[0]);
     server.queue.shift();
     server.dispatcher.on("finish", function(){
         if (server.queue[0])
             playSong(servers, message, connection);
-        else 
+        else {
+            message.channel.send("No more songs");
             connection.disconnect();
+        }
     });
 }
 

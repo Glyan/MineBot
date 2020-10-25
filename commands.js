@@ -33,10 +33,9 @@ function play(servers, message, args) {
 
 function skip(servers, message) {
     var server = servers[message.guild.id];
+    message.channel.send("Going next...")
     if (server.dispatcher)
         server.dispatcher.end();
-
-    message.channel.send("Going next!");
 }
 
 function stop(servers, message) {
@@ -83,8 +82,11 @@ function playlist(servers, message, args) {
 
 function view(servers, message) {
     var server = servers[message.guild.id];
-    for (var i = 0; i < server.queue.length; i++)
-        message.channel.send(server.queue[i]);
+    if (server.queue.length == 0)
+        message.channel.send("Empty queue :(");
+    else
+        for (var i = 0; i < server.queue.length; i++)
+            message.channel.send(server.queue[i]);
 }
 
 exports.play = play;
