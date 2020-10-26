@@ -1,6 +1,7 @@
 const ytdl = require("ytdl-core");
 const ytsr = require("ytsr");
 const ytpl = require("ytpl");
+const yts = require( 'yt-search' )
 
 function remainingArgs(args, index) {
     let slice = args.slice(index);
@@ -35,17 +36,16 @@ function playSong (servers, message, connection) {
 }
 
 async function searchYT (message, searchTerm) {
-    const res = await ytsr(searchTerm).catch(e => {
-        console.log(e);
+    const r = await yts(searchTerm).catch(e => {
         return message.channel.send("No search results!");
     })
 
-    const video = res.items.filter(i => i.type === "video")[0];
+    const video = r.videos[0];
     if (!video)
         return message.channel.send("No search results!");
     
-    message.channel.send(video.link);
-    return video.link;
+    message.channel.send("Found " + video.url);
+    return video.url;
 }
 
 async function searchPlaylist (servers, message, searchTerm) {

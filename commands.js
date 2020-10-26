@@ -23,7 +23,7 @@ function play(servers, message, args) {
     if (search.match(regex)) {
         utils.pushSong(servers, message, search);
     } else {
-        searchYT(search, message).then((url) => {
+        utils.searchYT(message, search).then((url) => {
             utils.pushSong(servers, message, url);
         }).catch((err) => {
             message.channel.send("Failed to search!");
