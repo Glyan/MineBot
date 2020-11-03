@@ -1,6 +1,6 @@
 const utils = require('./utils.js');
 
-function play(servers, message, args, random) {
+function play(servers, message, args) {
     let search = utils.remainingArgs(args, 1);
 
     if (!search) {
@@ -21,10 +21,10 @@ function play(servers, message, args, random) {
     var regex = new RegExp(expression);
 
     if (search.match(regex)) {
-        utils.pushSong(servers, message, search, random);
+        utils.pushSong(servers, message, search);
     } else {
         utils.searchYT(message, search).then((url) => {
-            utils.pushSong(servers, message, url, random);
+            utils.pushSong(servers, message, url);
         }).catch((err) => {
             message.channel.send("Failed to search!");
         });
@@ -60,7 +60,7 @@ function pop(servers, message) {
     }
 }
 
-function playlist(servers, message, args, random) {
+function playlist(servers, message, args) {
     let urlPlaylist = utils.remainingArgs(args, 1);
 
     if (!urlPlaylist) {
@@ -77,7 +77,7 @@ function playlist(servers, message, args, random) {
         queue: []
     }
 
-    utils.searchPlaylist(servers, message, urlPlaylist, random);
+    utils.searchPlaylist(servers, message, urlPlaylist);
 }
 
 function view(servers, message) {
@@ -89,8 +89,8 @@ function view(servers, message) {
             message.channel.send(server.queue[i]);
 }
 
-function random (random) {
-    random = !random;
+function random (message) {
+    utils.setRandom(message);
 }
 
 exports.play = play;

@@ -1,7 +1,9 @@
 const ytdl = require("ytdl-core");
 const ytsr = require("ytsr");
 const ytpl = require("ytpl");
-const yts = require( 'yt-search' )
+const yts = require( 'yt-search' );
+
+var random = false;
 
 function remainingArgs(args, index) {
     let slice = args.slice(index);
@@ -10,28 +12,29 @@ function remainingArgs(args, index) {
     return slice.join(" ");
 }
 
-function pushSong(servers, message, url, random) {
+function pushSong(servers, message, url) {
     var server = servers[message.guild.id];
     server.queue.push(url);
 
     if ((message.guild.voice === undefined) || (!message.guild.voice.connection))
         message.member.voice.channel.join().then(function (connection) {
-            playSong(servers, message, connection, random);
+            playSong(servers, message, connection);
         })
 }
 
-function playSong (servers, message, connection, random) {
+function playSong (servers, message, connection) {
     var server = servers[message.guild.id];
     var index = 0;
     if (random)
         index = getRandomInt(0, server.queue.length-1);
-
+        
+    console.log(random + "-" + index + "/" + server.queue.length);
     server.dispatcher = connection.play(ytdl(server.queue[index], {filter: "audioonly"}))
     message.channel.send("Now playing " + server.queue[index]);
-    server.queue.shift();
+    server.queue.splice(index, 1);
     server.dispatcher.on("finish", function(){
         if (server.queue[0])
-            playSong(servers, message, connection, random);
+            playSong(servers, message, connection);
         else {
             message.channel.send("No more songs");
             connection.disconnect();
@@ -56,7 +59,7 @@ async function searchYT (message, searchTerm) {
     return video.url;
 }
 
-async function searchPlaylist (servers, message, searchTerm, random) {
+async function searchPlaylist (servers, message, searchTerm) {
     console.log(searchTerm);
     const res = await ytpl(searchTerm).catch(e => {
         console.log(e);
@@ -72,11 +75,18 @@ async function searchPlaylist (servers, message, searchTerm, random) {
 
     if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
             message.member.voice.channel.join().then(function(connection) {
-            playSong(servers, message, connection, random);
+            playSong(servers, message, connection);
     })
+}
+
+function setRandom (message) {
+    random = !random;
+    var mode =  (random)? "ON":"OFF";
+    message.channel.send("Random mode: " + mode);
 }
 
 exports.remainingArgs = remainingArgs;
 exports.pushSong = pushSong; 
 exports.searchYT = searchYT;
 exports.searchPlaylist = searchPlaylist;
+exports.setRandom = setRandom;
