@@ -39,7 +39,7 @@ function playSong (servers, message, connection) {
         index = getRandomInt(0, server.queue.length-1);
         
     server.dispatcher = connection.play(ytdl(server.queue[index], {filter: "audioonly"}))
-    message.channel.send("Now playing " + server.titles[index]);
+    message.channel.send("Now playing: " + server.titles[index]);
 
     server.queue.splice(index, 1);
     server.titles.splice(index, 1);
