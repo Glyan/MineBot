@@ -14,7 +14,8 @@ function play(servers, message, args) {
     }
 
     if (!servers[message.guild.id]) servers[message.guild.id] = {
-        queue: []
+        queue: [],
+        titles: []
     }
 
     var expression = /[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi;
@@ -41,8 +42,10 @@ function skip(servers, message) {
 function stop(servers, message) {
     var server = servers[message.guild.id];
     if (message.guild.voice.connection) {
-        for (var i = server.queue.length - 1; i >= 0; i--)
+        for (var i = server.queue.length - 1; i >= 0; i--) {
             server.queue.splice(i, 1);
+            server.titles.splice(i, 1);
+        }
 
         server.dispatcher.end();
         message.channel.send("Stopped!");
@@ -56,6 +59,7 @@ function pop(servers, message) {
     var server = servers[message.guild.id];
     if (message.guild.voice.connection) {
         server.queue.splice(server.queue.length - 1, 1);
+        server.titles.splice(server.titles.length - 1, 1);
         message.channel.send("Pop!");
     }
 }
@@ -74,7 +78,8 @@ function playlist(servers, message, args) {
     }
 
     if (!servers[message.guild.id]) servers[message.guild.id] = {
-        queue: []
+        queue: [],
+        titles: []
     }
 
     utils.searchPlaylist(servers, message, urlPlaylist);
@@ -85,8 +90,8 @@ function view(servers, message) {
     if (server.queue.length == 0)
         message.channel.send("Empty queue :(");
     else
-        for (var i = 0; i < server.queue.length; i++)
-            message.channel.send(server.queue[i]);
+        for (var i = 0; i < server.titles.length; i++)
+            message.channel.send(server.titles[i]);
 }
 
 function random (message) {

@@ -2,6 +2,7 @@ const ytdl = require("ytdl-core");
 const ytsr = require("ytsr");
 const ytpl = require("ytpl");
 const yts = require( 'yt-search' );
+const { getVideoID } = require("ytdl-core");
 
 var random = false;
 
@@ -12,14 +13,23 @@ function remainingArgs(args, index) {
     return slice.join(" ");
 }
 
-function pushSong(servers, message, url) {
+async function pushSong(servers, message, url) {
     var server = servers[message.guild.id];
+    var videoID = getYouTubeID(url);
+    const video = await yts( { videoId: videoID } )
     server.queue.push(url);
-
+    server.titles.push(video.title);
+    
     if ((message.guild.voice === undefined) || (!message.guild.voice.connection))
         message.member.voice.channel.join().then(function (connection) {
             playSong(servers, message, connection);
         })
+}
+
+function getYouTubeID (url) {
+    var regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    var match = url.match(regExp);
+    return (match && match[2].length == 11) ? match[2] : false;
 }
 
 function playSong (servers, message, connection) {
@@ -28,10 +38,12 @@ function playSong (servers, message, connection) {
     if (random)
         index = getRandomInt(0, server.queue.length-1);
         
-    console.log(random + "-" + index + "/" + server.queue.length);
     server.dispatcher = connection.play(ytdl(server.queue[index], {filter: "audioonly"}))
-    message.channel.send("Now playing " + server.queue[index]);
+    message.channel.send("Now playing " + server.titles[index]);
+
     server.queue.splice(index, 1);
+    server.titles.splice(index, 1);
+
     server.dispatcher.on("finish", function(){
         if (server.queue[0])
             playSong(servers, message, connection);
@@ -70,7 +82,7 @@ async function searchPlaylist (servers, message, searchTerm) {
     
     res.items.forEach(video => {
         server.queue.push(video.url);
-        console.log(video.title);
+        server.titles.push(video.title);
     });
 
     if ((message.guild.voice === undefined)  || (!message.guild.voice.connection))
